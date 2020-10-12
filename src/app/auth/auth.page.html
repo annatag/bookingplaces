@@ -1,9 +1,18 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>auth</ion-title>
+    <ion-title>Authentication</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
+  <ion-list>
+  <ion-item>
+    <ion-label position="floating">Email</ion-label>
+    <ion-input></ion-input>
+  </ion-item>
+</ion-list>
+<!-- <ion-spinner color ="primary" *ngIf="isLoading"></ion-spinner> -->
+<!-- <ion-button color="primary" (click)="onLogin()" *ngIf="!isLoading">Login</ion-button> -->
 
+<ion-button color="primary" (click)="onLogin()" >Login</ion-button>
 </ion-content>

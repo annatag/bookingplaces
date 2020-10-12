@@ -33,5 +33,9 @@ export class OffersService {
    get offers() {
      return [...this._offers];
    }
-  constructor() { }
+   constructor() { }
+   getOffer(id: string){
+     return {...this._offers.find(o => (o.id === id))};
+     }
+  
 }
