@@ -19,7 +19,8 @@
         <ion-list>
           <!-- //#slidingItem this is a local reference  , Angular feature to be able to reference the sliding item itself later in the html, on the click-->
           <ion-item-sliding *ngFor="let offer of loadedMyOffers" #slidingItem> 
-            <ion-item
+            <app-offer-item [offer]="offer"></app-offer-item>
+            <!-- <ion-item
               [routerLink]="['/', 'places', 'tabs','offers', offer.id]"
               detail
             >
@@ -30,7 +31,7 @@
                 <h2>{{offer.title}}</h2>
                 <p>{{offer.description}}</p>
               </ion-label>
-            </ion-item>
+            </ion-item> -->
             <ion-item-options>
               <ion-item-option color="secondary" (click)="onEdit(offer.id, slidingItem)">
                 <!-- <ion-item-option color="secondary" [routerLink] ="['/', 'places', 'tabs', 'offers', 'edit-offer', offer.id]"> -->
