@@ -1,10 +1,11 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnDestroy, OnInit } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import {
   ActionSheetController,
   ModalController,
   NavController,
 } from "@ionic/angular";
+import { Subscription } from "rxjs";
 import { CreateBookingComponent } from "../../../bookings/create-booking/create-booking.component";
 import { Place } from "../../place.model";
 import { PlacesService } from "../../places.service";
@@ -14,8 +15,9 @@ import { PlacesService } from "../../places.service";
   templateUrl: "./place-detail.page.html",
   styleUrls: ["./place-detail.page.scss"],
 })
-export class PlaceDetailPage implements OnInit {
+export class PlaceDetailPage implements OnInit, OnDestroy{
   place: Place;
+  private placeSub: Subscription;
   constructor(
     private route: ActivatedRoute,
     private navCtrl: NavController,
@@ -30,27 +32,39 @@ export class PlaceDetailPage implements OnInit {
         this.navCtrl.navigateBack("/places/tabs/search");
         return;
       }
-      this.place = this.placesService.getPlace(paramMap.get("placeId"));
+      this.placeSub = this.placesService
+        .getPlace(paramMap.get("placeId"))
+        .subscribe((place) => {
+          this.place = place;
+        });
     });
   }
   onBookPlace() {
     //this.router.navigateByUrl('/places/tabs/search');
     // this.navCtrl.navigateBack('/places/tabs/search');
     //this.navCtrl.pop();
-    this.actionSheetCtrl.create({
-      header: "Choose an Action",
-      buttons: [
-        { text: "Select Date", handler: () => {
-          this.openBookingModal('select');
-        } },
-        { text: "Random Date", handler: () => {
-          this.openBookingModal('random');
-        } },
-        { text: "Cancel", role: "cancel" },
-      ]
-    }).then(actionSheetEl => {
-      actionSheetEl.present();
-    }); 
+    this.actionSheetCtrl
+      .create({
+        header: "Choose an Action",
+        buttons: [
+          {
+            text: "Select Date",
+            handler: () => {
+              this.openBookingModal("select");
+            },
+          },
+          {
+            text: "Random Date",
+            handler: () => {
+              this.openBookingModal("random");
+            },
+          },
+          { text: "Cancel", role: "cancel" },
+        ],
+      })
+      .then((actionSheetEl) => {
+        actionSheetEl.present();
+      });
   }
 
   openBookingModal(mode: "select" | "random") {
@@ -58,7 +72,7 @@ export class PlaceDetailPage implements OnInit {
     this.modalCtrl
       .create({
         component: CreateBookingComponent,
-        componentProps: { selectedPlace: this.place },
+        componentProps: { selectedPlace: this.place, selectedMode: mode },
       })
       .then((modalEl) => {
         modalEl.present();
@@ -70,5 +84,12 @@ export class PlaceDetailPage implements OnInit {
           console.log("BOOKED!");
         }
       });
+  }
+
+
+  ngOnDestroy() {
+    if(this.placeSub){
+      this.placeSub.unsubscribe();
+    }
   }
 }

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { IonItemSliding } from '@ionic/angular';
 import { Booking } from './booking.model';
 import { BookingService } from './booking.service';
@@ -9,6 +10,7 @@ import { BookingService } from './booking.service';
   styleUrls: ['./bookings.page.scss'],
 })
 export class BookingsPage implements OnInit {
+ form: FormGroup;
  loadedBookings: Booking[];
   constructor(private bookingService: BookingService) {
 
