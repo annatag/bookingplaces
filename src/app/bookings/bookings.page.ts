@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { IonItemSliding } from '@ionic/angular';
+import { IonItemSliding, LoadingController } from '@ionic/angular';
+import { Subscription } from 'rxjs';
 import { Booking } from './booking.model';
 import { BookingService } from './booking.service';
 
@@ -9,18 +10,34 @@ import { BookingService } from './booking.service';
   templateUrl: './bookings.page.html',
   styleUrls: ['./bookings.page.scss'],
 })
-export class BookingsPage implements OnInit {
+export class BookingsPage implements OnInit , OnDestroy{
  form: FormGroup;
  loadedBookings: Booking[];
-  constructor(private bookingService: BookingService) {
+ bookingSub: Subscription;
+  constructor(private bookingService: BookingService, private loadingCtrl: LoadingController) {
 
    }
 
   ngOnInit() {
-    this.loadedBookings = this.bookingService.bookings;
+    this.bookingSub = this.bookingService.bookings.subscribe( bookings => { 
+      this.loadedBookings = bookings;
+    } );
   }
-  onCancelBooking(offerId: string, slidingEl: IonItemSliding){
+  onCancelBooking(bookingId: string, slidingEl: IonItemSliding){
     slidingEl.close();
-    //cancel booking with id offerId
+    this.loadingCtrl.create({
+      message: 'Deleting the booking...'
+    }).then( loadingEl => {
+      loadingEl.present();
+      this.bookingService.cancelBooking(bookingId).subscribe(() => {
+        loadingEl.dismiss();
+      });
+    })
+    
   }
+  ngOnDestroy(){
+    if (this.bookingSub){
+      this.bookingSub.unsubscribe();
+  }
+}
 }
