@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LoadingController, NavController } from '@ionic/angular';
+import { AlertController, LoadingController, NavController } from '@ionic/angular';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { OffersService } from '../../offers.service';
 import { Offer } from '../../offer.model';
@@ -13,6 +13,8 @@ import { Subscription } from 'rxjs';
 })
 export class EditOfferPage implements OnInit, OnDestroy {
   offer: Offer;
+  offerId: string;
+  isLoading = false;
   private offerSub: Subscription;
   formEdit: FormGroup = new FormGroup({
     title: new FormControl(null, {
@@ -33,19 +35,49 @@ export class EditOfferPage implements OnInit, OnDestroy {
     private offersService: OffersService,
     private navCtrl: NavController,
     private loadingCtrl: LoadingController,
-    private router: Router
+    private router: Router,
+    private alertCtrl: AlertController
   ) {}
 
   ngOnInit() {
-    this.route.paramMap.subscribe((paramMap) => {
+    this.route.paramMap.subscribe(paramMap => {
       if (!paramMap.has('offerId')) {
         this.navCtrl.navigateBack('/places/tabs/offers');
         return;
       }
+      this.offerId = paramMap.get('offerId');
+      this.isLoading = true;
       this.offerSub = this.offersService
         .getOffer(paramMap.get('offerId'))
         .subscribe(offer => {
           this.offer = offer;
+          this.formEdit = new FormGroup({
+            title: new FormControl(this.offer.title, {
+              updateOn: 'blur',
+              validators: [Validators.required]
+            }),
+            description: new FormControl(this.offer.description, {
+              updateOn: 'blur',
+              validators: [Validators.required, Validators.maxLength(180)]
+            }),
+            price: new FormControl(this.offer.price, {
+                  updateOn: 'blur',
+                  validators: [Validators.required, Validators.min(1)],
+                })
+          });
+          this.isLoading = false;
+        }, error => {
+          this.alertCtrl.create({
+            header: 'An error occured!',
+            message: 'Place could not be fetched, please try again later!',
+            buttons: [{
+              text: 'Okay',
+            handler: () => {
+              this.router.navigate(['places/tabs/offers']);
+            }}]
+          }).then(alertEl => {
+            alertEl.present();
+          })
         });
       // this.loadOffer(paramMap.get("offerId"));
     });

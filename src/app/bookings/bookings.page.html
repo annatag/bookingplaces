@@ -8,23 +8,32 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
+<ion-content >
   <ion-grid>
     <ion-row>
-      <ion-col>
-        <ion-row>
-          <ion-col size-md="6" offset-md="3" *ngIf="!loadedBookings || loadedBookings.length <= 0" text-center>
-<p>No bookings found!</p>
-          </ion-col>
-        </ion-row>
+      <ion-col size-sm="6" offset-sm="3" class="ion-text-center" *ngIf="isLoading">
+        <ion-spinner color="primary" ></ion-spinner>
       </ion-col>
-      <ion-col  size-md="6" offset-md="3" *ngIf="loadedBookings && loadedBookings.length > 0">
+      <ion-col
+        size-sm="6"
+        offset-sm="3"
+        *ngIf="!isLoading && (!loadedBookings || loadedBookings.length <= 0)"
+        class="ion-text-center"
+      >
+        <p>No bookings found!</p>
+      </ion-col>
+      <ion-col  size-md="6" offset-nd="3" *ngIf="!isLoading && loadedBookings && loadedBookings.length > 0" text-center>
         <ion-list>
           <ion-item-sliding *ngFor="let booking of loadedBookings" #slidingBooking> 
             <ion-item>
+              <ion-avatar slot="start">
+                <ion-img [src]="booking.placeImage"></ion-img>
+              </ion-avatar>
               <ion-label>
                 <h4>{{booking.placeTitle}}</h4>
                 <p>Guests: {{booking.guestNumber}}</p>
+                <p>Booked from: {{booking.bookedFrom.getMonth()}}/{{booking.bookedFrom.getDate()}}/{{booking.bookedFrom.getFullYear()}} </p>
+                <p>to: {{booking.bookedTo.getMonth()}}/{{booking.bookedTo.getDate()}}/{{booking.bookedTo.getFullYear()}}</p> 
               </ion-label>
             </ion-item>
             <ion-item-options>

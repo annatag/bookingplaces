@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import { AuthService } from '../auth/auth.service';
-import { Place } from './place.model';
-import { take, filter, map, tap, switchMap } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
+import { Injectable } from "@angular/core";
+import { BehaviorSubject, of } from "rxjs";
+import { AuthService } from "../auth/auth.service";
+import { Place } from "./place.model";
+import { take, filter, map, tap, switchMap } from "rxjs/operators";
+import { HttpClient } from "@angular/common/http";
 
 interface PlaceData {
   availableFrom: string;
@@ -16,7 +16,7 @@ interface PlaceData {
 }
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: "root",
 })
 export class PlacesService {
   private _places = new BehaviorSubject<Place[]>([]);
@@ -58,45 +58,68 @@ export class PlacesService {
   //   ),
   // ]);
 
- 
-  
-  
-  fetchPlaces(){
+  fetchPlaces() {
     return this.http
-    .get<{ [id: string]: PlaceData}>('https://bookingag-4ced5.firebaseio.com/offered-places.json')
-    .pipe(
-        map(resData => {
-        const places = [];
-        for (const id in resData) {
-          if (resData.hasOwnProperty(id)) {
-            places.push(
-              new Place(
-              id,
-              resData[id].title,
-              resData[id].description,
-              resData[id].imageUrl,
-              resData[id].price,
-              new Date(resData[id].availableFrom),
-              new Date(resData[id].availableTo),
-              resData[id].userId
-                 )
-               );
-              }
+      .get<{ [id: string]: PlaceData }>(
+        "https://bookingag-4ced5.firebaseio.com/offered-places.json"
+      )
+      .pipe(
+        map((resData) => {
+          const places = [];
+          for (const id in resData) {
+            if (resData.hasOwnProperty(id)) {
+              places.push(
+                new Place(
+                  id,
+                  resData[id].title,
+                  resData[id].description,
+                  resData[id].imageUrl,
+                  resData[id].price,
+                  new Date(resData[id].availableFrom),
+                  new Date(resData[id].availableTo),
+                  resData[id].userId
+                )
+              );
             }
-        return places;
-      //  return [];
-    }), tap(places => {
-      this._places.next(places); //making sure whatever subscribes get the latest places
-    })
-    );
+          }
+          return places;
+          //  return [];
+        }),
+        tap((places) => {
+          this._places.next(places); //making sure whatever subscribes get the latest places
+        })
+      );
   }
+
+  //This getPlace is for inMemory data
+  // getPlace(id: string) {
+  //   return this.places.pipe(
+  //     take(1),
+  //     map((places) => {
+  //       return { ...places.find((p) => p.id === id) };
+  //     })
+  //   );
+  // }
+
   getPlace(id: string) {
-    return this.places.pipe(
-      take(1),
-      map((places) => {
-        return { ...places.find((p) => p.id === id) };
-      })
-    );
+    return this.http
+      .get<PlaceData>(
+        `https://bookingag-4ced5.firebaseio.com/offered-places/${id}.json`
+      )
+      .pipe(
+        map((resData) => {
+          return new Place(
+            id,
+            resData.title,
+            resData.description,
+            resData.imageUrl,
+            resData.price,
+            new Date(resData.availableFrom),
+            new Date(resData.availableTo),
+            resData.userId
+          );
+        })
+      );
   }
 
   addPlace(
@@ -111,24 +134,28 @@ export class PlacesService {
       Math.random().toString(),
       title,
       description,
-      'https://commons.wikimedia.org/wiki/File:Musentempel_im_Herbst,_1710150958,_ako.jpg#/media/File:Musentempel_im_Herbst,_1710150958,_ako.jpg',
+      "https://commons.wikimedia.org/wiki/File:Musentempel_im_Herbst,_1710150958,_ako.jpg#/media/File:Musentempel_im_Herbst,_1710150958,_ako.jpg",
       price,
       dateFrom,
       dateTo,
       this.authService.userId
     );
 
-
-    return  this.http.post<{id: string}>('https://bookingag-4ced5.firebaseio.com/offered-places.json', {...newPlace, id: null}).pipe(
-      switchMap(resData => {
-        generatedId = resData.id;
-        return this.places;
-      }),
-      take(1),
-      tap(places => {
-        newPlace.id = generatedId;
-        this._places.next(places.concat(newPlace));
-      })
+    return this.http
+      .post<{ id: string }>(
+        "https://bookingag-4ced5.firebaseio.com/offered-places.json",
+        { ...newPlace, id: null }
+      )
+      .pipe(
+        switchMap((resData) => {
+          generatedId = resData.id;
+          return this.places;
+        }),
+        take(1),
+        tap((places) => {
+          newPlace.id = generatedId;
+          this._places.next(places.concat(newPlace));
+        })
       );
     // return  this.http.post('https://bookingag-4ced5.firebaseio.com/offered-places.json', {...newPlace, id: null}).pipe(
     //    tap(resData => {
@@ -144,7 +171,14 @@ export class PlacesService {
     return this.places.pipe(
       take(1),
       switchMap(places => {
-        const updatedPlaceIndex = places.findIndex(pl => pl.id === placeId);
+        if (!places || places.length <= 0) {
+          return this.fetchPlaces();
+        } else {
+          return of(places);
+        }
+      }),
+      switchMap((places) => {
+        const updatedPlaceIndex = places.findIndex((pl) => pl.id === placeId);
         updatedPlaces = [...places];
         const oldPlace = updatedPlaces[updatedPlaceIndex];
         updatedPlaces[updatedPlaceIndex] = new Place(

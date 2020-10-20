@@ -6,6 +6,7 @@ import {
   LoadingController,
   ModalController,
   NavController,
+  AlertController
 } from "@ionic/angular";
 import { Subscription } from "rxjs";
 import { AuthService } from '../../../auth/auth.service';
@@ -21,8 +22,9 @@ import { PlacesService } from "../../places.service";
 })
 export class PlaceDetailPage implements OnInit, OnDestroy {
   place: Place;
+  isLoading = false;
   private placeSub: Subscription;
-  isBookable: boolean;
+  isBookable = false;
   constructor(
     private route: ActivatedRoute,
     private navCtrl: NavController,
@@ -31,21 +33,40 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
     private actionSheetCtrl: ActionSheetController,
     private bookingService: BookingService,
     private loadingCtrl: LoadingController,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router,
+    private alertCtrl: AlertController
   ) {}
 
   ngOnInit() {
     this.route.paramMap.subscribe((paramMap) => {
-      if (!paramMap.has("placeId")) {
-        this.navCtrl.navigateBack("/places/tabs/search");
+      if (!paramMap.has('placeId')) {
+        this.navCtrl.navigateBack('/places/tabs/search');
         return;
       }
+      this.isLoading = true;
       this.placeSub = this.placesService
-        .getPlace(paramMap.get("placeId"))
+        .getPlace(paramMap.get('placeId'))
         .subscribe((place) => {
           this.place = place;
           this.isBookable = place.userId !== this.authService.userId;
-        });
+          this.isLoading = false;
+        }, error => {
+          this.alertCtrl
+          .create({
+            header: 'An error occured!',
+            message: 'Could not load place.',
+            buttons: [
+              { 
+                text: 'Okay',
+                handler: () => {
+                  this.router.navigate(['places/tabs/search']);
+                }
+              }
+            ]
+          }).then(alertEl => alertEl.present());
+        }
+      );
     });
   }
   onBookPlace() {
