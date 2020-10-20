@@ -1,3 +1,4 @@
+import { NumberFormatStyle } from '@angular/common';
 import { Component, OnDestroy, OnInit } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import {
@@ -7,6 +8,7 @@ import {
   NavController,
 } from "@ionic/angular";
 import { Subscription } from "rxjs";
+import { AuthService } from '../../../auth/auth.service';
 import { BookingService } from "../../../bookings/booking.service";
 import { CreateBookingComponent } from "../../../bookings/create-booking/create-booking.component";
 import { Place } from "../../place.model";
@@ -20,7 +22,7 @@ import { PlacesService } from "../../places.service";
 export class PlaceDetailPage implements OnInit, OnDestroy {
   place: Place;
   private placeSub: Subscription;
-  
+  isBookable: boolean;
   constructor(
     private route: ActivatedRoute,
     private navCtrl: NavController,
@@ -28,7 +30,8 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
     private modalCtrl: ModalController,
     private actionSheetCtrl: ActionSheetController,
     private bookingService: BookingService,
-    private loadingCtrl: LoadingController
+    private loadingCtrl: LoadingController,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -41,6 +44,7 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
         .getPlace(paramMap.get("placeId"))
         .subscribe((place) => {
           this.place = place;
+          this.isBookable = place.userId !== this.authService.userId;
         });
     });
   }

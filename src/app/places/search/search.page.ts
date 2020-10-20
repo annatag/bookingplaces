@@ -15,7 +15,9 @@ export class SearchPage implements OnInit, OnDestroy {
   loadedPlaces: Place[];
   listedLoadedPlaces: Place [];
   relevantPlaces: Place[];
+  isLoading = false;
   private placeSub: Subscription;
+
 
   constructor(
     private placeService: PlacesService,
@@ -29,6 +31,12 @@ export class SearchPage implements OnInit, OnDestroy {
       this.listedLoadedPlaces = this.relevantPlaces.slice(1);
     });
   }
+
+
+ionViewWillEnter() {
+  this.isLoading = true;
+  this.placeService.fetchPlaces().subscribe(() => {this.isLoading = false;});
+}
 
   onOpenMenu() {
 this.menuCtrl.toggle('m1');
@@ -45,6 +53,7 @@ this.menuCtrl.toggle('m1');
       this.listedLoadedPlaces = this.relevantPlaces.slice(1);
     }
     console.log(event.detail);
+    console.log(this.relevantPlaces);
   }
 
   ngOnDestroy() {
