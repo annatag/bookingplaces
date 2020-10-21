@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { NavController } from '@ionic/angular';
 import { Subscription } from 'rxjs';
@@ -10,7 +10,7 @@ import { OffersService } from '../../offers.service';
   templateUrl: './offer-detail.page.html',
   styleUrls: ['./offer-detail.page.scss'],
 })
-export class OfferDetailPage implements OnInit, onDestroy {
+export class OfferDetailPage implements OnInit, OnDestroy {
    offer: Offer;
    private offerSub: Subscription;
    constructor(
