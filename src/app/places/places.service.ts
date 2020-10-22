@@ -1,9 +1,10 @@
-import { Injectable } from "@angular/core";
-import { BehaviorSubject, of } from "rxjs";
-import { AuthService } from "../auth/auth.service";
-import { Place } from "./place.model";
-import { take, filter, map, tap, switchMap } from "rxjs/operators";
-import { HttpClient } from "@angular/common/http";
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, of } from 'rxjs';
+import { AuthService } from '../auth/auth.service';
+import { Place } from './place.model';
+import { take, filter, map, tap, switchMap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { PlaceLocation } from './location.model';
 
 interface PlaceData {
   availableFrom: string;
@@ -13,12 +14,14 @@ interface PlaceData {
   price: number;
   title: string;
   userId: string;
+  location: PlaceLocation;
 }
 
 @Injectable({
-  providedIn: "root",
+  providedIn: 'root',
 })
 export class PlacesService {
+  // tslint:disable-next-line: variable-name
   private _places = new BehaviorSubject<Place[]>([]);
 
   get places() {
@@ -61,7 +64,7 @@ export class PlacesService {
   fetchPlaces() {
     return this.http
       .get<{ [id: string]: PlaceData }>(
-        "https://bookingag-4ced5.firebaseio.com/offered-places.json"
+        'https://bookingag-4ced5.firebaseio.com/offered-places.json'
       )
       .pipe(
         map((resData) => {
@@ -77,7 +80,8 @@ export class PlacesService {
                   resData[id].price,
                   new Date(resData[id].availableFrom),
                   new Date(resData[id].availableTo),
-                  resData[id].userId
+                  resData[id].userId,
+                  resData[id].location
                 )
               );
             }
@@ -86,12 +90,12 @@ export class PlacesService {
           //  return [];
         }),
         tap((places) => {
-          this._places.next(places); //making sure whatever subscribes get the latest places
+          this._places.next(places); // making sure whatever subscribes get the latest places
         })
       );
   }
 
-  //This getPlace is for inMemory data
+  // This getPlace is for inMemory data
   // getPlace(id: string) {
   //   return this.places.pipe(
   //     take(1),
@@ -116,7 +120,8 @@ export class PlacesService {
             resData.price,
             new Date(resData.availableFrom),
             new Date(resData.availableTo),
-            resData.userId
+            resData.userId,
+            resData.location
           );
         })
       );
@@ -127,23 +132,25 @@ export class PlacesService {
     description: string,
     price: number,
     dateFrom: Date,
-    dateTo: Date
+    dateTo: Date,
+    location: PlaceLocation
   ) {
     let generatedId: string;
     const newPlace = new Place(
       Math.random().toString(),
       title,
       description,
-      "https://commons.wikimedia.org/wiki/File:Musentempel_im_Herbst,_1710150958,_ako.jpg#/media/File:Musentempel_im_Herbst,_1710150958,_ako.jpg",
+      'https://commons.wikimedia.org/wiki/File:Musentempel_im_Herbst,_1710150958,_ako.jpg#/media/File:Musentempel_im_Herbst,_1710150958,_ako.jpg',
       price,
       dateFrom,
       dateTo,
-      this.authService.userId
+      this.authService.userId,
+      location
     );
 
     return this.http
       .post<{ id: string }>(
-        "https://bookingag-4ced5.firebaseio.com/offered-places.json",
+        'https://bookingag-4ced5.firebaseio.com/offered-places.json',
         { ...newPlace, id: null }
       )
       .pipe(
@@ -189,7 +196,8 @@ export class PlacesService {
           oldPlace.price,
           oldPlace.availableFrom,
           oldPlace.availableTo,
-          oldPlace.userId
+          oldPlace.userId,
+          oldPlace.location
         );
         return this.http.put(
           `https://bookingag-4ced5.firebaseio.com/offered-places.json/${placeId}.json`,

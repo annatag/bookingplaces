@@ -1,3 +1,5 @@
+import { PlaceLocation } from './location.model';
+
 export class Offer {
 constructor (
     public id: string,
@@ -7,5 +9,6 @@ constructor (
     public price: number,
     public availableFrom: Date,
     public availableTo: Date,
-    public userId: string){}
+    public userId: string,
+    public location: PlaceLocation){}
 }

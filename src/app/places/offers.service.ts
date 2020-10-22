@@ -1,9 +1,10 @@
-import { Injectable } from "@angular/core";
-import { BehaviorSubject, of } from "rxjs";
-import { AuthService } from "../auth/auth.service";
-import { Offer } from "./offer.model";
-import { take, filter, map, tap, delay, switchMap } from "rxjs/operators";
-import { HttpClient } from "@angular/common/http";
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, of } from 'rxjs';
+import { AuthService } from '../auth/auth.service';
+import { Offer } from './offer.model';
+import { take, filter, map, tap, delay, switchMap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { PlaceLocation } from './location.model';
 
 interface OfferData {
   availableFrom: string;
@@ -13,9 +14,10 @@ interface OfferData {
   price: number;
   title: string;
   userId: string;
+  location: PlaceLocation;
 }
 @Injectable({
-  providedIn: "root",
+  providedIn: 'root',
 })
 export class OffersService {
   // tslint:disable-next-line: variable-name
@@ -67,7 +69,7 @@ export class OffersService {
   fetchOffers() {
     return this.http
       .get<{ [id: string]: OfferData }>(
-        "https://bookingag-4ced5.firebaseio.com/offered-places.json"
+        'https://bookingag-4ced5.firebaseio.com/offered-places.json'
       )
       .pipe(
         map((resData) => {
@@ -83,7 +85,8 @@ export class OffersService {
                   resData[id].price,
                   new Date(resData[id].availableFrom),
                   new Date(resData[id].availableTo),
-                  resData[id].userId
+                  resData[id].userId,
+                  resData[id].location
                 )
               );
             }
@@ -92,7 +95,7 @@ export class OffersService {
           //  return [];
         }),
         tap((offers) => {
-          this._offers.next(offers); //making sure whatever subscribes get the latest places
+          this._offers.next(offers); // making sure whatever subscribes get the latest places
         })
       );
   }
@@ -121,7 +124,8 @@ export class OffersService {
             resData.price,
             new Date(resData.availableFrom),
             new Date(resData.availableTo),
-            resData.userId
+            resData.userId,
+            resData.location
           );
         })
       );
@@ -132,23 +136,25 @@ export class OffersService {
     description: string,
     price: number,
     dateFrom: Date,
-    dateTo: Date
+    dateTo: Date,
+    location: PlaceLocation
   ) {
     let generatedId: string;
     const newOffer = new Offer(
       Math.random().toString(),
       title,
       description,
-      "https://upload.wikimedia.org/wikipedia/commons/6/69/CampanileGiotto-01.jpg",
+      'https://upload.wikimedia.org/wikipedia/commons/6/69/CampanileGiotto-01.jpg',
       price,
       dateFrom,
       dateTo,
-      this.authService.userId
+      this.authService.userId,
+      location
     );
 
     return this.http
       .post<{ id: string }>(
-        "https://bookingag-4ced5.firebaseio.com/offered-places.json",
+        'https://bookingag-4ced5.firebaseio.com/offered-places.json',
         { ...newOffer, id: null }
       )
       .pipe(
@@ -174,7 +180,7 @@ export class OffersService {
     //   })
     // );
   }
-  //This is for in memory db
+  // This is for in memory db
   // updateOffer(offerId: string, title: string, description: string, price: number){
   //     return this.offers.pipe(
   //       take(1),
@@ -214,6 +220,7 @@ export class OffersService {
         } // fetching my current list of offers
       }),
       switchMap((offers) => {
+        // tslint:disable-next-line: no-shadowed-variable
         const updatedOfferIndex = offers.findIndex((of) => of.id === offerId);
         updatedOffers = [...offers];
         const oldOffer = updatedOffers[updatedOfferIndex];
@@ -225,7 +232,8 @@ export class OffersService {
           price,
           oldOffer.availableFrom,
           oldOffer.availableTo,
-          oldOffer.userId
+          oldOffer.userId,
+          oldOffer.location
         );
         return this.http.put(
           `https://bookingag-4ced5.firebaseio.com/offered-places/${offerId}.json`,
