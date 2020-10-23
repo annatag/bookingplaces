@@ -2,6 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import {
   Component,
   EventEmitter,
+  Input,
   OnDestroy,
   OnInit,
   Output,
@@ -27,6 +28,7 @@ export class LocationPickerComponent implements OnInit {
   selectedLocationImage: string;
   isLoading = false;
   @Output() locationPick = new EventEmitter<PlaceLocation>();
+  @Input() showPreview = false;
   constructor(
     private modalCtrl: ModalController,
     private http: HttpClient,

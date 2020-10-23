@@ -131,20 +131,29 @@ export class OffersService {
       );
   }
 
+  uploadImage(image: File){
+    const uploadData = new FormData();
+    uploadData.append('image', image);
+
+    return this.http.post<{imageUrl: string, imagePath: string}>
+  ('https://us-central1-bookingag-4ced5.cloudfunctions.net/storeImage', uploadData);
+  }
+
   addOffer(
     title: string,
     description: string,
     price: number,
     dateFrom: Date,
     dateTo: Date,
-    location: PlaceLocation
+    location: PlaceLocation,
+    imageUrl: string
   ) {
     let generatedId: string;
     const newOffer = new Offer(
       Math.random().toString(),
       title,
       description,
-      'https://upload.wikimedia.org/wikipedia/commons/6/69/CampanileGiotto-01.jpg',
+      imageUrl,
       price,
       dateFrom,
       dateTo,

@@ -127,20 +127,30 @@ export class PlacesService {
       );
   }
 
+
+  uploadImage(image: File){
+    const uploadData = new FormData();
+    uploadData.append('image', image);
+
+    return this.http.post<{imageUrl: string, imagePath: string}>
+  ('https://us-central1-bookingag-4ced5.cloudfunctions.net/storeImage', uploadData);
+  }
+
   addPlace(
     title: string,
     description: string,
     price: number,
     dateFrom: Date,
     dateTo: Date,
-    location: PlaceLocation
+    location: PlaceLocation,
+    imageUrl: string
   ) {
     let generatedId: string;
     const newPlace = new Place(
       Math.random().toString(),
       title,
       description,
-      'https://commons.wikimedia.org/wiki/File:Musentempel_im_Herbst,_1710150958,_ako.jpg#/media/File:Musentempel_im_Herbst,_1710150958,_ako.jpg',
+      imageUrl ,
       price,
       dateFrom,
       dateTo,
