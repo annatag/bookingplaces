@@ -1,10 +1,10 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, of } from 'rxjs';
-import { AuthService } from '../auth/auth.service';
-import { Offer } from './offer.model';
-import { take, filter, map, tap, delay, switchMap } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
-import { PlaceLocation } from './location.model';
+import { Injectable } from "@angular/core";
+import { BehaviorSubject, of } from "rxjs";
+import { AuthService } from "../auth/auth.service";
+import { Offer } from "./offer.model";
+import { take, filter, map, tap, delay, switchMap } from "rxjs/operators";
+import { HttpClient } from "@angular/common/http";
+import { PlaceLocation } from "./location.model";
 
 interface OfferData {
   availableFrom: string;
@@ -17,7 +17,7 @@ interface OfferData {
   location: PlaceLocation;
 }
 @Injectable({
-  providedIn: 'root',
+  providedIn: "root",
 })
 export class OffersService {
   // tslint:disable-next-line: variable-name
@@ -67,37 +67,39 @@ export class OffersService {
   // }
 
   fetchOffers() {
-    return this.http
-      .get<{ [id: string]: OfferData }>(
-        'https://bookingag-4ced5.firebaseio.com/offered-places.json'
-      )
-      .pipe(
-        map((resData) => {
-          const offers = [];
-          for (const id in resData) {
-            if (resData.hasOwnProperty(id)) {
-              offers.push(
-                new Offer(
-                  id,
-                  resData[id].title,
-                  resData[id].description,
-                  resData[id].imageUrl,
-                  resData[id].price,
-                  new Date(resData[id].availableFrom),
-                  new Date(resData[id].availableTo),
-                  resData[id].userId,
-                  resData[id].location
-                )
-              );
-            }
+    return this.authService.token.pipe(
+      take(1),
+      switchMap((token) => {
+        return this.http.get<{ [id: string]: OfferData }>(
+          `https://bookingag-4ced5.firebaseio.com/offered-places.json?auth=${token}`
+        );
+      }),
+      map((resData) => {
+        const offers = [];
+        for (const id in resData) {
+          if (resData.hasOwnProperty(id)) {
+            offers.push(
+              new Offer(
+                id,
+                resData[id].title,
+                resData[id].description,
+                resData[id].imageUrl,
+                resData[id].price,
+                new Date(resData[id].availableFrom),
+                new Date(resData[id].availableTo),
+                resData[id].userId,
+                resData[id].location
+              )
+            );
           }
-          return offers;
-          //  return [];
-        }),
-        tap((offers) => {
-          this._offers.next(offers); // making sure whatever subscribes get the latest places
-        })
-      );
+        }
+        return offers;
+        //  return [];
+      }),
+      tap((offers) => {
+        this._offers.next(offers); // making sure whatever subscribes get the latest places
+      })
+    );
   }
 
   // getOffer(id: string) {
@@ -110,33 +112,43 @@ export class OffersService {
   //   }
 
   getOffer(id: string) {
-    return this.http
-      .get<OfferData>(
-        `https://bookingag-4ced5.firebaseio.com/offered-places/${id}.json`
-      )
-      .pipe(
-        map((resData) => {
-          return new Offer(
-            id,
-            resData.title,
-            resData.description,
-            resData.imageUrl,
-            resData.price,
-            new Date(resData.availableFrom),
-            new Date(resData.availableTo),
-            resData.userId,
-            resData.location
-          );
-        })
-      );
+    return this.authService.token.pipe(
+      take(1),
+      switchMap((token) => {
+        return this.http.get<OfferData>(
+          `https://bookingag-4ced5.firebaseio.com/offered-places/${id}.json?auth=${token}`
+        );
+      }),
+      map((resData) => {
+        return new Offer(
+          id,
+          resData.title,
+          resData.description,
+          resData.imageUrl,
+          resData.price,
+          new Date(resData.availableFrom),
+          new Date(resData.availableTo),
+          resData.userId,
+          resData.location
+        );
+      })
+    );
   }
 
-  uploadImage(image: File){
+  uploadImage(image: File) {
     const uploadData = new FormData();
-    uploadData.append('image', image);
+    uploadData.append("image", image);
 
-    return this.http.post<{imageUrl: string, imagePath: string}>
-  ('https://us-central1-bookingag-4ced5.cloudfunctions.net/storeImage', uploadData);
+    return this.authService.token.pipe(
+      take(1),
+      switchMap((token) => {
+        return this.http.post<{ imageUrl: string; imagePath: string }>(
+          `https://us-central1-bookingag-4ced5.cloudfunctions.net/storeImage`,
+          uploadData,
+          { headers: { Authorization: "Bearer" + token } }
+        );
+      })
+    );
   }
 
   addOffer(
@@ -149,34 +161,46 @@ export class OffersService {
     imageUrl: string
   ) {
     let generatedId: string;
-    const newOffer = new Offer(
-      Math.random().toString(),
-      title,
-      description,
-      imageUrl,
-      price,
-      dateFrom,
-      dateTo,
-      this.authService.userId,
-      location
-    );
+    let fetchedUserId: string;
+    let newOffer: Offer;
+    return this.authService.userId.pipe(
+      take(1),
+      switchMap((userId) => {
+        fetchedUserId = userId;
+        return this.authService.token;
+      }),
+      take(1),
+      switchMap((token) => {
+        if (!fetchedUserId) {
+          throw new Error("No user found!");
+        }
+        newOffer = new Offer(
+          Math.random().toString(),
+          title,
+          description,
+          imageUrl,
+          price,
+          dateFrom,
+          dateTo,
+          fetchedUserId,
+          location
+        );
 
-    return this.http
-      .post<{ id: string }>(
-        'https://bookingag-4ced5.firebaseio.com/offered-places.json',
-        { ...newOffer, id: null }
-      )
-      .pipe(
-        switchMap((resData) => {
-          generatedId = resData.id;
-          return this.offers;
-        }),
-        take(1),
-        tap((offers) => {
-          newOffer.id = generatedId;
-          this._offers.next(offers.concat(newOffer));
-        })
-      );
+        return this.http.post<{ id: string }>(
+          `https://bookingag-4ced5.firebaseio.com/offered-places.json?auth=${token}`,
+          { ...newOffer, id: null }
+        );
+      }),
+      switchMap((resData) => {
+        generatedId = resData.id;
+        return this.offers;
+      }),
+      take(1),
+      tap((offers) => {
+        newOffer.id = generatedId;
+        this._offers.next(offers.concat(newOffer));
+      })
+    );
     // return  this.http.post<{name: string}>('https://bookingag-4ced5.firebaseio.com/offered-places.json', {...newOffer, id: null}).pipe(
     //   tap(resData => {
     //    console.log(resData);
@@ -219,7 +243,13 @@ export class OffersService {
     price: number
   ) {
     let updatedOffers: Offer[];
-    return this.offers.pipe(
+    let fetchedToken: string;
+    return this.authService.token.pipe(
+      take(1),
+      switchMap(token => {
+        fetchedToken = token;
+        return this.offers;
+      }), 
       take(1),
       switchMap((offers) => {
         if (!offers || offers.length <= 0) {
@@ -245,7 +275,7 @@ export class OffersService {
           oldOffer.location
         );
         return this.http.put(
-          `https://bookingag-4ced5.firebaseio.com/offered-places/${offerId}.json`,
+          `https://bookingag-4ced5.firebaseio.com/offered-places/${offerId}.json?auth=${fetchedToken}`,
           { ...updatedOffers[updatedOfferIndex], id: null }
         );
       }),
