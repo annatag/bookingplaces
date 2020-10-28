@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 
 import { Platform } from '@ionic/angular';
-import { Plugins, Capacitor} from '@capacitor/core';
+import { Plugins, Capacitor, AppState} from '@capacitor/core';
 import { AuthService } from './auth/auth.service';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -40,6 +40,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if(!isAuth && this.previousAuthState !==isAuth) {
     this.router.navigateByUrl('/auth');}
     this.previousAuthState = isAuth;
+    Plugins.App.addListener('appStateChange', this.checkAuthOnResume.bind(this));
    });
  }
  ngOnDestroy() {
@@ -51,5 +52,18 @@ export class AppComponent implements OnInit, OnDestroy {
     this.authService.logout();
     
 
+  }
+
+  private checkAuthOnResume(state: AppState) {
+    if (state.isActive) {
+      this.authService
+        .autoLogin()
+        .pipe(take(1))
+        .subscribe(success => {
+          if (!success) {
+            this.onLogout();
+          }
+        });
+    }
   }
 }
